@@ -1,0 +1,174 @@
+definitions:
+  human_verification.VerificationRequest:
+    properties:
+      apkFilename:
+        type: string
+      correlationID:
+        type: string
+      createdAt:
+        type: string
+      eventID:
+        type: string
+      id:
+        type: string
+      status:
+        type: string
+      updatedAt:
+        type: string
+    type: object
+  rest.ErrorResponseDTO:
+    properties:
+      error:
+        example: invalid request
+        type: string
+    type: object
+  rest.GetRequestsListByStatusesOutDTO:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/human_verification.VerificationRequest'
+        type: array
+      page:
+        type: integer
+      size:
+        type: integer
+    type: object
+  rest.RequestFileLinkOutDTO:
+    properties:
+      link:
+        example: https://example.com/file.apk
+        type: string
+    type: object
+  rest.UpdateRequestStatusInDTO:
+    properties:
+      status:
+        enum:
+        - approved
+        - rejected
+        example: approved
+        type: string
+    required:
+    - status
+    type: object
+info:
+  contact: {}
+  title: Human Verification Service
+  version: "1.0"
+paths:
+  /verifications:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает список запросов, у которых статус совпадает хотя бы
+        с одним из переданных значений.
+      parameters:
+      - description: Номер страницы, начиная с 0
+        in: query
+        name: page
+        type: integer
+      - description: Размер страницы
+        in: query
+        name: size
+        type: integer
+      - collectionFormat: csv
+        description: Статусы для фильтрации
+        in: query
+        items:
+          type: string
+        name: statuses
+        type: array
+      - description: Статусы через запятую, если не передан statuses
+        in: query
+        name: status
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/rest.GetRequestsListByStatusesOutDTO'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/rest.ErrorResponseDTO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/rest.ErrorResponseDTO'
+      summary: Список запросов на верификацию
+      tags:
+      - verification-requests
+  /verifications/{requestId}:
+    patch:
+      consumes:
+      - application/json
+      description: Меняет статус запроса на approved или rejected.
+      parameters:
+      - description: Идентификатор запроса
+        in: path
+        name: requestId
+        required: true
+        type: string
+      - description: Новый статус запроса
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/rest.UpdateRequestStatusInDTO'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/rest.ErrorResponseDTO'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/rest.ErrorResponseDTO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/rest.ErrorResponseDTO'
+      summary: Обновить статус запроса
+      tags:
+      - verification-requests
+  /verifications/{requestId}/link:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает ссылку на APK-файл, связанный с указанным запросом.
+      parameters:
+      - description: Идентификатор запроса
+        in: path
+        name: requestId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/rest.RequestFileLinkOutDTO'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/rest.ErrorResponseDTO'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/rest.ErrorResponseDTO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/rest.ErrorResponseDTO'
+      summary: Получить ссылку на файл
+      tags:
+      - verification-requests
+swagger: "2.0"

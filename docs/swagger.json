@@ -1,0 +1,263 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "title": "Human Verification Service",
+        "contact": {},
+        "version": "1.0"
+    },
+    "paths": {
+        "/verifications": {
+            "get": {
+                "description": "Возвращает список запросов, у которых статус совпадает хотя бы с одним из переданных значений.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "verification-requests"
+                ],
+                "summary": "Список запросов на верификацию",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Номер страницы, начиная с 0",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Размер страницы",
+                        "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "description": "Статусы для фильтрации",
+                        "name": "statuses",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Статусы через запятую, если не передан statuses",
+                        "name": "status",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/rest.GetRequestsListByStatusesOutDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/rest.ErrorResponseDTO"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/rest.ErrorResponseDTO"
+                        }
+                    }
+                }
+            }
+        },
+        "/verifications/{requestId}": {
+            "patch": {
+                "description": "Меняет статус запроса на approved или rejected.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "verification-requests"
+                ],
+                "summary": "Обновить статус запроса",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Идентификатор запроса",
+                        "name": "requestId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Новый статус запроса",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/rest.UpdateRequestStatusInDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/rest.ErrorResponseDTO"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/rest.ErrorResponseDTO"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/rest.ErrorResponseDTO"
+                        }
+                    }
+                }
+            }
+        },
+        "/verifications/{requestId}/link": {
+            "get": {
+                "description": "Возвращает ссылку на APK-файл, связанный с указанным запросом.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "verification-requests"
+                ],
+                "summary": "Получить ссылку на файл",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Идентификатор запроса",
+                        "name": "requestId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/rest.RequestFileLinkOutDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/rest.ErrorResponseDTO"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/rest.ErrorResponseDTO"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/rest.ErrorResponseDTO"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "human_verification.VerificationRequest": {
+            "type": "object",
+            "properties": {
+                "apkFilename": {
+                    "type": "string"
+                },
+                "correlationID": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "eventID": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "rest.ErrorResponseDTO": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string",
+                    "example": "invalid request"
+                }
+            }
+        },
+        "rest.GetRequestsListByStatusesOutDTO": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/human_verification.VerificationRequest"
+                    }
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "size": {
+                    "type": "integer"
+                }
+            }
+        },
+        "rest.RequestFileLinkOutDTO": {
+            "type": "object",
+            "properties": {
+                "link": {
+                    "type": "string",
+                    "example": "https://example.com/file.apk"
+                }
+            }
+        },
+        "rest.UpdateRequestStatusInDTO": {
+            "type": "object",
+            "required": [
+                "status"
+            ],
+            "properties": {
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "approved",
+                        "rejected"
+                    ],
+                    "example": "approved"
+                }
+            }
+        }
+    }
+}

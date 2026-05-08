@@ -1,0 +1,4 @@
+.DS_Store
+internal/adapters/grpc/gen
+internal/adapters/repository/postgres/human_verification
+.idea
