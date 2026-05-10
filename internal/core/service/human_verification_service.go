@@ -2,6 +2,8 @@ package service
 
 import (
 	"context"
+	"time"
+
 	"github.com/google/uuid"
 	"humanVerification/internal/adapters/kafka"
 	"humanVerification/internal/adapters/repository/postgres"
@@ -32,6 +34,10 @@ func (s *Service) GetVerificationRequests(page, size int, statuses []string) ([]
 		return nil, err
 	}
 
+	if list == nil {
+		return []human_verification.VerificationRequest{}, nil
+	}
+
 	return list, nil
 }
 
@@ -55,16 +61,40 @@ func (s *Service) CreateVerificationRequest(event kafka.Event) error {
 func (s *Service) UpdateVerificationRequestStatus(requestId, status string) error {
 	ctx := context.Background()
 
-	err := s.repo.UpdateVerificationRequestStatus(ctx, human_verification.UpdateVerificationRequestStatusParams{
-		ID:     uuid.MustParse(requestId),
-		Status: status,
-	})
+	id := uuid.MustParse(requestId)
 
+	current, err := s.repo.GetVerificationRequest(ctx, id)
 	if err != nil {
 		return err
 	}
 
-	return nil
+	if !isValidTransition(current.Status, status) {
+		return ErrInvalidTransition
+	}
+
+	if err := s.repo.UpdateVerificationRequestStatus(ctx, human_verification.UpdateVerificationRequestStatusParams{
+		ID:     id,
+		Status: status,
+	}); err != nil {
+		return err
+	}
+
+	if status == StatusInProgress {
+		return nil
+	}
+
+	message := kafka.HumanVerifyFailed
+	if status == StatusApproved {
+		message = kafka.HumanVerifySucceeded
+	}
+
+	return s.producer.Send(ctx, kafka.TopicVerificationResponses, current.CorrelationID.String(), kafka.Event{
+		EventID:       uuid.New().String(),
+		CorrelationID: current.CorrelationID.String(),
+		Type:          message,
+		FileName:      current.ApkFilename,
+		Timestamp:     time.Now(),
+	})
 }
 
 func (s *Service) GetFileLink(requestId string) (string, error) {

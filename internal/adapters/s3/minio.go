@@ -16,21 +16,33 @@ type FileStorage interface {
 }
 
 type Minio struct {
-	client *minio.Client
-	bucket string
+	client        *minio.Client
+	presignClient *minio.Client
+	bucket        string
 }
 
-func NewMinio(endpoint, access, secret, bucket string) *Minio {
-	minioClient, err := minio.New(endpoint, &minio.Options{
-		Creds: credentials.NewStaticV4(access, secret, ""),
-	})
-	if err != nil {
-		log.Fatalln(err)
+func NewMinio(endpoint, access, secret, bucket, publicEndpoint, region string) *Minio {
+	newClient := func(ep string) *minio.Client {
+		c, err := minio.New(ep, &minio.Options{
+			Creds:  credentials.NewStaticV4(access, secret, ""),
+			Region: region,
+		})
+		if err != nil {
+			log.Fatalln(err)
+		}
+		return c
+	}
+
+	main := newClient(endpoint)
+	presign := main
+	if publicEndpoint != "" && publicEndpoint != endpoint {
+		presign = newClient(publicEndpoint)
 	}
 
 	return &Minio{
-		client: minioClient,
-		bucket: bucket,
+		client:        main,
+		presignClient: presign,
+		bucket:        bucket,
 	}
 }
 
@@ -61,7 +73,7 @@ func (m *Minio) GetFile(fileName string) (*os.File, error) {
 func (m *Minio) GetFileLink(fileName string) (string, error) {
 	ctx := context.Background()
 
-	u, err := m.client.PresignedGetObject(ctx, m.bucket, fileName, 15*time.Minute, url.Values{})
+	u, err := m.presignClient.PresignedGetObject(ctx, m.bucket, fileName, 15*time.Minute, url.Values{})
 	if err != nil {
 		return "", err
 	}

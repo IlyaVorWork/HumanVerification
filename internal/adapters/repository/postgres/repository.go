@@ -11,4 +11,5 @@ type HumanVerificationRepository interface {
 	ListVerificationRequestsByStatusesPaged(ctx context.Context, arg human_verification.ListVerificationRequestsByStatusesPagedParams) ([]human_verification.VerificationRequest, error)
 	UpdateVerificationRequestStatus(ctx context.Context, arg human_verification.UpdateVerificationRequestStatusParams) error
 	GetFileName(ctx context.Context, id uuid.UUID) (string, error)
+	GetVerificationRequest(ctx context.Context, id uuid.UUID) (human_verification.VerificationRequest, error)
 }

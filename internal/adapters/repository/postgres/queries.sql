@@ -32,3 +32,8 @@ WHERE id = $1;
 -- name: GetFileName :one
 SELECT apk_filename FROM verification_requests
 WHERE id = $1;
+
+-- name: GetVerificationRequest :one
+SELECT id, event_id, correlation_id, apk_filename, status, created_at, updated_at
+FROM verification_requests
+WHERE id = $1;

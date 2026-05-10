@@ -14,6 +14,9 @@ const (
 	TopicHumanVerifyRequest Topic = "human.verify.request"
 
 	TopicVerificationResponses Topic = "verification.responses"
+
+	HumanVerifySucceeded = "human.verify.succeeded"
+	HumanVerifyFailed    = "human.verify.failed"
 )
 
 type Event struct {

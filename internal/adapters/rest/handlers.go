@@ -7,16 +7,10 @@ import (
 	"github.com/gin-gonic/gin"
 	"humanVerification/internal/adapters/kafka"
 	"humanVerification/internal/adapters/repository/postgres/human_verification"
+	"humanVerification/internal/core/service"
 	"net/http"
 	"strconv"
 	"strings"
-)
-
-const (
-	StatusPending    = "pending"
-	StatusInProgress = "in_progress"
-	StatusApproved   = "approved"
-	StatusRejected   = "rejected"
 )
 
 type Service interface {
@@ -106,8 +100,10 @@ func (h *VerificationRequestHandler) UpdateRequestStatus(c *gin.Context) {
 		return
 	}
 
-	if body.Status != StatusApproved && body.Status != StatusRejected {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "status must be approved or rejected"})
+	switch body.Status {
+	case service.StatusInProgress, service.StatusApproved, service.StatusRejected:
+	default:
+		c.JSON(http.StatusBadRequest, gin.H{"error": "status must be in_progress, approved or rejected"})
 		return
 	}
 
@@ -162,26 +158,27 @@ func parsePositiveIntQuery(c *gin.Context, key string, fallback int) (int, error
 }
 
 func parseStatusesQuery(c *gin.Context) []string {
-	statuses := c.QueryArray("statuses")
-	if len(statuses) == 0 {
-		raw := strings.TrimSpace(c.Query("status"))
-		if raw != "" {
-			statuses = strings.Split(raw, ",")
+	raw := c.QueryArray("statuses")
+	if len(raw) == 0 {
+		if s := strings.TrimSpace(c.Query("status")); s != "" {
+			raw = []string{s}
 		}
 	}
 
-	out := make([]string, 0, len(statuses))
-	seen := make(map[string]struct{}, len(statuses))
-	for _, status := range statuses {
-		status = strings.TrimSpace(status)
-		if status == "" {
-			continue
+	out := make([]string, 0, len(raw))
+	seen := make(map[string]struct{}, len(raw))
+	for _, s := range raw {
+		for _, status := range strings.Split(s, ",") {
+			status = strings.TrimSpace(status)
+			if status == "" {
+				continue
+			}
+			if _, ok := seen[status]; ok {
+				continue
+			}
+			seen[status] = struct{}{}
+			out = append(out, status)
 		}
-		if _, ok := seen[status]; ok {
-			continue
-		}
-		seen[status] = struct{}{}
-		out = append(out, status)
 	}
 	return out
 }
@@ -193,6 +190,10 @@ func writeError(c *gin.Context, err error) {
 	}
 	if errors.Is(err, sql.ErrNoRows) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
+		return
+	}
+	if errors.Is(err, service.ErrInvalidTransition) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 	c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

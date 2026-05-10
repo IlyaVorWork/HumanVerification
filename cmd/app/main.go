@@ -34,6 +34,8 @@ func main() {
 	minioAccessKey := getEnv("MINIO_ACCESS_KEY", "admin")
 	minioSecretKey := getEnv("MINIO_SECRET_KEY", "password123")
 	minioBucket := getEnv("MINIO_BUCKET", "app-builds")
+	minioPublicEndpoint := getEnv("MINIO_PUBLIC_ENDPOINT", minioEndpoint)
+	minioRegion := getEnv("MINIO_REGION", "us-east-1")
 	kafkaBroker := getEnv("KAFKA_BROKER", "localhost:9092")
 
 	gin := rkgin.GetGinEntry("human_verification")
@@ -57,7 +59,7 @@ func main() {
 	}()
 
 	repository := human_verification.New(db)
-	minioClient := s3.NewMinio(minioBucket, minioEndpoint, minioAccessKey, minioSecretKey)
+	minioClient := s3.NewMinio(minioEndpoint, minioAccessKey, minioSecretKey, minioBucket, minioPublicEndpoint, minioRegion)
 	verificationService = service.NewService(repository, responsesProducer, minioClient)
 	handler := resthandlers.NewVerificationRequestHandler(verificationService)
 
