@@ -1,8 +1,12 @@
-# ---------- stage 1 : build go ----------
-FROM golang:1.25.5-alpine
-WORKDIR /humanVerification
+FROM golang:1.25.5-alpine AS builder
+WORKDIR /src
 COPY go.mod go.sum ./
 RUN go mod download && go mod verify
 COPY . .
+RUN CGO_ENABLED=0 go build -o /bin/service ./cmd/app
 
-CMD ["go", "run", "./cmd/app/main.go" ]
+FROM alpine:3.21
+WORKDIR /app
+COPY --from=builder /bin/service /app/service
+COPY --from=builder /src/boot.yaml /app/boot.yaml
+ENTRYPOINT ["/app/service"]

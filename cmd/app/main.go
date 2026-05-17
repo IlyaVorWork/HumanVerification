@@ -24,8 +24,12 @@ var verificationService *service.Service
 // @title Human Verification Service
 // @version 1.0
 func main() {
-	// Create a new boot instance.
-	boot := rkboot.NewBoot()
+	raw, err := os.ReadFile("boot.yaml")
+	if err != nil {
+		log.Fatalf("failed to read boot.yaml: %v", err)
+	}
+
+	boot := rkboot.NewBoot(rkboot.WithBootConfigRaw([]byte(os.ExpandEnv(string(raw)))))
 
 	// Bootstrap
 	boot.Bootstrap(context.TODO())

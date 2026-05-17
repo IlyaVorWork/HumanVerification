@@ -8,9 +8,9 @@ gin:
 postgres:
   - name: human_verification_postgres
     enabled: true
-    addr: "postgres:5432"
-    user: yydz
-    pass: root
+    addr: "${POSTGRES_ADDR}"
+    user: "${POSTGRES_USER}"
+    pass: "${POSTGRES_PASS}"
     database:
-      - name: human_verification
+      - name: "${POSTGRES_DB}"
         autoCreate: true
