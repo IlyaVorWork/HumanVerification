@@ -7,6 +7,7 @@ gin:
       enabled: true
     sw:
       enabled: true
+      path: "human/sw"
 postgres:
   - name: human_verification_postgres
     enabled: true
