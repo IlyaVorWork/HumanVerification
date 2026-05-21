@@ -3,6 +3,8 @@ gin:
   - name: human_verification
     port: 8080
     enabled: true
+    commonService:
+      enabled: true
     sw:
       enabled: true
 postgres:
