@@ -8,6 +8,7 @@ gin:
     sw:
       enabled: true
       path: "human/sw"
+      jsonPath: "docs"
 postgres:
   - name: human_verification_postgres
     enabled: true
